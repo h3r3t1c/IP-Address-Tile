@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">IP Address Tile</string>
+    <string name="app_name_short">IP Tile</string>
+    <string name="local_ip_tile_title">Local IP Address</string>
+    <string name="local_ip_address">Local IP Address</string>
+    <string name="not_connected">Not Connected</string>
+    <string name="no_network">No Network</string>
+    <string name="close">Close</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="network_address">Network Address</string>
+    <string name="local_address">Local Address</string>
+</resources>
