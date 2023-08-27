@@ -9,4 +9,13 @@
     <string name="title_activity_main">MainActivity</string>
     <string name="network_address">Network Address</string>
     <string name="local_address">Local Address</string>
+    <string name="show_dialog_on_lockscreen">Show Dialog On Lockscreen</string>
+    <string name="hide_ip_when_locked">Hide IP Address When Device is Locked</string>
+    <string name="ip_address_copied">IP Address Copied</string>
+    <string name="no_network_connection">No Network Connection</string>
+    <string name="linkedin_profile">LinkedIn Profile</string>
+    <string name="about">About</string>
+    <string name="play_store_apps">Play Store Apps</string>
+    <string name="github">GitHub Profile</string>
+    <string name="settings">Settings</string>
 </resources>

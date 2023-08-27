@@ -20,6 +20,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.h3r3t1c.quicksettings.iptile.R
+import com.h3r3t1c.quicksettings.iptile.util.Keys
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.util.Collections
@@ -40,8 +41,8 @@ class LocalIPTileService : TileService() {
         tile.icon = Icon.createWithResource(this, R.drawable.ic_lan_network);
 
         if(isNetworkAvailable()){
-            tile.state = Tile.STATE_ACTIVE
-            val ip = getLocalIPAddress(true)
+            tile.state = if(isLocked && Keys.hideIPOnLockscreen(this)) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE
+            val ip = if(isLocked && Keys.hideIPOnLockscreen(this)) "[Hidden]" else getLocalIPAddress(true)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 tile.subtitle = ip
                 tile.label = getString(R.string.local_ip_address)
@@ -121,11 +122,14 @@ class LocalIPTileService : TileService() {
     @SuppressLint("MissingInflatedId")
     override fun onClick() {
         super.onClick()
-        if(!isLocked){
+        if(!isNetworkAvailable()){
+            Toast.makeText(this, getString(R.string.no_network_connection), Toast.LENGTH_LONG).show()
+        }
+        else if(!isLocked){
             val localIP = getLocalIPAddress()
             val view = LayoutInflater.from(this).inflate(R.layout.dialog_ip_tile, null);
             val d = Dialog(this, android.R.style.Theme_DeviceDefault_Dialog);
-            val networkIpView = view.findViewById<TextView>(R.id.textNetworkAddress)
+            //val networkIpView = view.findViewById<TextView>(R.id.textNetworkAddress)
             view.findViewById<Button>(R.id.button).setOnClickListener {
                 d.dismiss()
             }
@@ -134,13 +138,13 @@ class LocalIPTileService : TileService() {
                 clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.local_ip_address),localIP))
 
                 if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2)
-                    Toast.makeText(this, "IP Address Copied", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, getString(R.string.ip_address_copied), Toast.LENGTH_LONG).show()
             }
             view.findViewById<TextView>(R.id.textLocalAddress).text = localIP
 
             view.findViewById<View>(R.id.op2).visibility = View.GONE
 
-            d.setTitle("Network Address")
+            d.setTitle(R.string.network_address)
             d.setContentView(view)
             showDialog(d)
         }

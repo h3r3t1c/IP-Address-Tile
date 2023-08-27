@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace 'com.h3r3t1c.quicksettings.iptile'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.h3r3t1c.quicksettings.iptile"
         minSdk 27
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
@@ -35,6 +35,7 @@ android {
     }
     buildFeatures {
         compose true
+        buildConfig true
     }
     composeOptions {
         kotlinCompilerExtensionVersion '1.4.3'
@@ -65,4 +66,7 @@ dependencies {
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
     debugImplementation 'androidx.compose.ui:ui-tooling'
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
+
+    implementation 'androidx.compose.material:material-icons-core:1.5.0'
+    implementation 'androidx.compose.material:material-icons-extended:1.5.0'
 }

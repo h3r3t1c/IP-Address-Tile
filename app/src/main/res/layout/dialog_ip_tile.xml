@@ -19,7 +19,7 @@
             android:id="@+id/imageView"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:padding="4dp"
+            android:padding="6dp"
             android:src="@drawable/ic_lan_network"
             android:tint="@color/icon_color"
             tools:srcCompat="@drawable/ic_lan_network" />
@@ -59,7 +59,7 @@
         <ImageView
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:padding="4dp"
+            android:padding="6dp"
             android:src="@drawable/ic_remote_network"
             android:tint="@color/icon_color"
             tools:srcCompat="@drawable/ic_remote_network" />
