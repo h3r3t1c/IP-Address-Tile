@@ -20,6 +20,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.h3r3t1c.quicksettings.iptile.R
+import com.h3r3t1c.quicksettings.iptile.util.AddressHelper
 import com.h3r3t1c.quicksettings.iptile.util.Keys
 import java.net.InetAddress
 import java.net.NetworkInterface
@@ -37,15 +38,16 @@ class LocalIPTileService : TileService() {
     override fun onStartListening() {
         super.onStartListening()
         val tile = qsTile
+        val interfaceName = Keys.getSelectedInterface(this);
 
         tile.icon = Icon.createWithResource(this, R.drawable.ic_lan_network);
 
         if(isNetworkAvailable()){
             tile.state = if(isLocked && Keys.hideIPOnLockscreen(this)) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE
-            val ip = if(isLocked && Keys.hideIPOnLockscreen(this)) "[Hidden]" else getLocalIPAddress(true)
+            val ip = if(isLocked && Keys.hideIPOnLockscreen(this)) "[Hidden]" else AddressHelper.getSelectedInterfaceIP(this)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 tile.subtitle = ip
-                tile.label = getString(R.string.local_ip_address)
+                tile.label = if(Keys.showInterfaceName(this)) interfaceName.toString() else getString(R.string.local_ip_address)
             }
             else{
                 tile.label = ip
@@ -55,7 +57,7 @@ class LocalIPTileService : TileService() {
             tile.state = Tile.STATE_UNAVAILABLE
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 tile.subtitle = getString(R.string.not_connected)
-                tile.label = getString(R.string.local_ip_address)
+                tile.label = if(Keys.showInterfaceName(this)) interfaceName.toString() else getString(R.string.local_ip_address)
             }
             else{
                 tile.label = getString(R.string.no_network)
@@ -63,50 +65,6 @@ class LocalIPTileService : TileService() {
         }
 
         tile.updateTile()
-    }
-
-    /**
-     * Will try to return the IP address of wlan0
-     *
-     */
-    private fun getLocalIPAddress(useIPv4:Boolean = true): String? {
-        var ip = "Not Connected"
-        var isWifi = false;
-        try {
-            val interfaces: List<NetworkInterface> =
-                Collections.list(NetworkInterface.getNetworkInterfaces())
-            for (intf in interfaces) {
-                isWifi = intf.name != null && intf.name.equals("wlan0",true)
-                val addrs: List<InetAddress> = Collections.list(intf.inetAddresses)
-                for (addr in addrs) {
-                    if (!addr.isLoopbackAddress) {
-                        val sAddr = addr.hostAddress
-                        //Log.d("zzz",sAddr+" - "+intf.name)
-                        val isIPv4 = sAddr.indexOf(':') < 0
-                        if (useIPv4) {
-                            if (isIPv4 ){
-                                ip = sAddr
-                                if(isWifi)
-                                    return sAddr
-                            }
-                        } else {
-                            if (!isIPv4) {
-                                val delim = sAddr.indexOf('%') // drop ip6 zone suffix
-                                ip = if (delim < 0) sAddr.uppercase(Locale.getDefault()) else sAddr.substring(
-                                    0,
-                                    delim
-                                ).uppercase(
-                                    Locale.getDefault()
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-        }
-        return ip
     }
     private fun isNetworkAvailable(): Boolean {
         val conMgr = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -126,10 +84,10 @@ class LocalIPTileService : TileService() {
             Toast.makeText(this, getString(R.string.no_network_connection), Toast.LENGTH_LONG).show()
         }
         else if(!isLocked){
-            val localIP = getLocalIPAddress()
+            val localIP = AddressHelper.getSelectedInterfaceIP(this)
             val view = LayoutInflater.from(this).inflate(R.layout.dialog_ip_tile, null);
             val d = Dialog(this, android.R.style.Theme_DeviceDefault_Dialog);
-            //val networkIpView = view.findViewById<TextView>(R.id.textNetworkAddress)
+
             view.findViewById<Button>(R.id.button).setOnClickListener {
                 d.dismiss()
             }
