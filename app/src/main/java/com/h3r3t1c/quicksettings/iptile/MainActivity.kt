@@ -11,6 +11,7 @@ import android.service.quicksettings.TileService
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.HideSource
@@ -47,20 +49,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startActivity
 import com.h3r3t1c.quicksettings.iptile.dialogs.InterfacePickerDialog
+import com.h3r3t1c.quicksettings.iptile.ext.scrollbar
+import com.h3r3t1c.quicksettings.iptile.ext.simpleVerticalScrollbar
 import com.h3r3t1c.quicksettings.iptile.service.LocalIPTileService
 import com.h3r3t1c.quicksettings.iptile.ui.theme.Blue500
+import com.h3r3t1c.quicksettings.iptile.ui.theme.Blue700
 import com.h3r3t1c.quicksettings.iptile.ui.theme.IPTileTheme
 import com.h3r3t1c.quicksettings.iptile.util.AddressHelper
 import com.h3r3t1c.quicksettings.iptile.util.Keys
+import my.nanihadesuka.compose.LazyColumnScrollbar
 import java.net.NetworkInterface
 import java.util.Collections
 import java.util.concurrent.Executor
@@ -104,6 +113,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainActivityUI(){
     val context = LocalContext.current;
+    val mainPadding = dimensionResource(id = R.dimen.main_app_padding)
+
+
     var selectedInterface by remember {
         mutableStateOf(AddressHelper.interfaceNameToReadableName(
             Keys.getSelectedInterface(context).toString())+" ("+Keys.getSelectedInterface(context).toString()+")"
@@ -112,90 +124,117 @@ fun MainActivityUI(){
     var showInterfacePickerDialog by remember {
         mutableStateOf(false)
     }
-    LazyColumn(
-        modifier = Modifier.padding(16.dp)
-    ) {
-        /*item{
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                Card(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                        Button(
-                            onClick = {
-                                val statusBarManager: StatusBarManager = context.getSystemService(StatusBarManager::class.java)
-                                val resultSuccessExecutor = Executor {
+    var lazeColumnState = rememberLazyListState()
+    LazyColumnScrollbar(
+        lazeColumnState,
+        hideDelayMillis = 1000,
+        thumbColor = if (isSystemInDarkTheme()) Blue700 else Blue500,
+        padding = 8.dp
 
-                                }
-                                statusBarManager.requestAddTileService(
-                                    ComponentName(context, LocalIPTileService::class.java),
-                                    context.getString(R.string.app_name),
-                                    Icon.createWithResource(context, R.drawable.ic_lan_network),
-                                    resultSuccessExecutor
-                                ){ resultCodeFailure ->
-                                    Log.d("zzz", resultCodeFailure.toString())
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth().fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "Add Quick Settings Tile",
-                                color = Color.White
-                            )
-                        }
-                    }
+    ){
+        LazyColumn(
+            modifier = Modifier.padding(start = mainPadding, end = mainPadding),
+            state = lazeColumnState
+        ) {
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                item {
+                    ShowAddButton()
+                }
+            }
+            item{
+                Text(
+                    text = stringResource(R.string.settings).toUpperCase(Locale.current),
+                    fontWeight = FontWeight.Bold,
+                    color = Blue500,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                )
+            }
+
+            item{SwitchOption(Keys.showDialogOnLockscreen(context), R.string.show_dialog_on_lockscreen, Keys.PREF_SHOW_DIALOG_LOCKSCREEN, Icons.Default.HideSource)}
+            item{SwitchOption(Keys.showDialogOnLockscreen(context), R.string.show_dialog_on_lockscreen, Keys.PREF_SHOW_DIALOG_LOCKSCREEN, Icons.Default.HideSource)}
+            item{SwitchOption(Keys.showDialogOnLockscreen(context), R.string.show_dialog_on_lockscreen, Keys.PREF_SHOW_DIALOG_LOCKSCREEN, Icons.Default.HideSource)}
+
+            item{SwitchOption(Keys.hideIPOnLockscreen(context), R.string.hide_ip_when_locked, Keys.PREF_HIDE_IP_ON_LOCK, Icons.Default.HideSource, true)}
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                item{SwitchOption(Keys.showInterfaceName(context), R.string.show_intf_name, Keys.PREF_SHOW_INTERFACE_NAME, Icons.Default.ShortText)}
+
+            item{
+                SelectOption(title = stringResource(R.string.selected_interface), subTitle = selectedInterface, icon = R.drawable.ic_interface)
+                {
+                    showInterfacePickerDialog = true
                 }
             }
 
-        }*/
-        item{
-            Text(
-                text = stringResource(R.string.settings),
+            item{Text(
+                text = stringResource(R.string.about).toUpperCase(Locale.current),
                 fontWeight = FontWeight.Bold,
                 color = Blue500,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp)
-            )
-        }
-        //item{SwitchOption(Keys.showDialogOnLockscreen(context), R.string.show_dialog_on_lockscreen, Keys.PREF_SHOW_DIALOG_LOCKSCREEN, true)}
-        item{SwitchOption(Keys.hideIPOnLockscreen(context), R.string.hide_ip_when_locked, Keys.PREF_HIDE_IP_ON_LOCK, Icons.Default.HideSource, true)}
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-            item{SwitchOption(Keys.showInterfaceName(context), R.string.show_intf_name, Keys.PREF_SHOW_INTERFACE_NAME, Icons.Default.ShortText)}
+                    .padding(top = 16.dp, bottom = 8.dp)
+            )}
 
-        item{
-            SelectOption(title = stringResource(R.string.selected_interface), subTitle = selectedInterface, icon = R.drawable.ic_interface)
-            {
-                showInterfacePickerDialog = true
+            item{LinkOption("Created by Thomas Otero\nth3h3r3t1c@gmail.com", icon = R.drawable.ic_account,"mailto:th3h3r3t1c@gmail.com", true)}
+            item{LinkOption(R.string.linkedin_profile, icon = R.drawable.ic_linkedin,"https://www.linkedin.com/in/thomas-otero-5b8aa429/")}
+            item{LinkOption(R.string.play_store_apps, icon = R.drawable.ic_google_play,"https://play.google.com/store/apps/developer?id=Thomas+Otero")}
+            item{LinkOption(R.string.github, icon = R.drawable.ic_github,"https://github.com/h3r3t1c")}
+            item{LinkOption("Version "+BuildConfig.VERSION_NAME, icon = R.drawable.ic_about,null)}
+        }
+        if(showInterfacePickerDialog){
+            InterfacePickerDialog(){ selected ->
+                showInterfacePickerDialog = false
+                if(selected != ""){
+                    Keys.updateString(context, Keys.PREF_INTERFACE, selected)
+                    selectedInterface = AddressHelper.interfaceNameToReadableName(selected)+" ($selected)"
+                }
             }
         }
-
-        item{Text(
-            text = stringResource(R.string.about),
-            fontWeight = FontWeight.Bold,
-            color = Blue500,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp, bottom = 8.dp)
-        )}
-
-        item{LinkOption("Created by Thomas Otero\nth3h3r3t1c@gmail.com", icon = R.drawable.ic_account,"mailto:th3h3r3t1c@gmail.com", true)}
-        item{LinkOption(R.string.linkedin_profile, icon = R.drawable.ic_linkedin,"https://www.linkedin.com/in/thomas-otero-5b8aa429/")}
-        item{LinkOption(R.string.play_store_apps, icon = R.drawable.ic_google_play,"https://play.google.com/store/apps/developer?id=Thomas+Otero")}
-        item{LinkOption(R.string.github, icon = R.drawable.ic_github,"https://github.com/h3r3t1c")}
-        item{LinkOption("Version "+BuildConfig.VERSION_NAME, icon = R.drawable.ic_about,null)}
     }
-    if(showInterfacePickerDialog){
-        InterfacePickerDialog(){ selected ->
-            showInterfacePickerDialog = false
-            if(selected != ""){
-                Keys.updateString(context, Keys.PREF_INTERFACE, selected)
-                selectedInterface = AddressHelper.interfaceNameToReadableName(selected)+" ($selected)"
+
+}
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+@Composable
+fun ShowAddButton(){
+    val context = LocalContext.current
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
+    ) {
+        Column(modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)) {
+            Button(
+                onClick = {
+                    val statusBarManager: StatusBarManager = context.getSystemService(StatusBarManager::class.java)
+                    val resultSuccessExecutor = Executor {
+
+                    }
+                    statusBarManager.requestAddTileService(
+                        ComponentName(context, LocalIPTileService::class.java),
+                        context.getString(R.string.app_name),
+                        Icon.createWithResource(context, R.drawable.ic_lan_network),
+                        resultSuccessExecutor
+                    ){ resultCodeFailure ->
+
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxWidth()
+            ) {
+                Text(
+                    text = "Add Quick Settings Tile",
+                    color = Color.White
+                )
             }
         }
     }
 }
-
 @Composable
 fun SelectOption(title:String, subTitle:String, icon:Int, hideSpace: Boolean=false, onClick:()->Unit){
     if(!hideSpace) {
@@ -231,7 +270,6 @@ fun SelectOption(title:String, subTitle:String, icon:Int, hideSpace: Boolean=fal
 
     }
 }
-
 @Composable
 fun LinkOption(title:Int, icon:Int, url:String?,hideSpace:Boolean = false ){
     LinkOption(title = stringResource(id = title), icon, url, hideSpace)
@@ -302,7 +340,9 @@ fun SwitchOption(b:Boolean, title:Int, pref:String, icon:ImageVector, hideSpace:
             tint = if(isSystemInDarkTheme()) Color.White else Color.Black
         )
         Column(
-            modifier = Modifier.weight(1f).padding(start = 8.dp, end = 8.dp)
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 8.dp, end = 8.dp)
         ) {
             Text(
                 text = stringResource(title),

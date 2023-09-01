@@ -43,8 +43,8 @@ class LocalIPTileService : TileService() {
         tile.icon = Icon.createWithResource(this, R.drawable.ic_lan_network);
 
         if(isNetworkAvailable()){
-            tile.state = if(isLocked && Keys.hideIPOnLockscreen(this)) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE
-            val ip = if(isLocked && Keys.hideIPOnLockscreen(this)) "[Hidden]" else AddressHelper.getSelectedInterfaceIP(this)
+            tile.state = Tile.STATE_ACTIVE
+            val ip = if(isLocked && Keys.hideIPOnLockscreen(this)) "" else AddressHelper.getSelectedInterfaceIP(this)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 tile.subtitle = ip
                 tile.label = if(Keys.showInterfaceName(this)) interfaceName.toString() else getString(R.string.local_ip_address)
@@ -77,11 +77,15 @@ class LocalIPTileService : TileService() {
     }
 
     // Called when the user taps on your tile in an active or inactive state.
-    @SuppressLint("MissingInflatedId")
+
     override fun onClick() {
         super.onClick()
+
         if(!isNetworkAvailable()){
             Toast.makeText(this, getString(R.string.no_network_connection), Toast.LENGTH_LONG).show()
+        }
+        else if(isLocked){
+            if(Keys.hideIPOnLockscreen(this)) Toast.makeText(this.applicationContext, "Unlock to see IP address!", Toast.LENGTH_LONG).show()
         }
         else if(!isLocked){
             val localIP = AddressHelper.getSelectedInterfaceIP(this)
