@@ -21,4 +21,6 @@
     <string name="show_intf_name">Show Interface Name on Tile</string>
     <string name="selected_interface">Selected Interface</string>
     <string name="select_interface">Select Interface</string>
+    <string name="tile_added">Tile Added!</string>
+    <string name="add_quick_settings_tile">Add Quick Settings Tile</string>
 </resources>

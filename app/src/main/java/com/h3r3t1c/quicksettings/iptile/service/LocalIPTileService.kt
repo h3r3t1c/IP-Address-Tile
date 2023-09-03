@@ -33,6 +33,7 @@ class LocalIPTileService : TileService() {
     // Called when the user adds your tile.
     override fun onTileAdded() {
         super.onTileAdded()
+        Keys.updateBoolean(this, Keys.KEY_TILE_ADDED, true)
     }
     // Called when your app can update your tile.
     override fun onStartListening() {
@@ -114,5 +115,6 @@ class LocalIPTileService : TileService() {
     // Called when the user removes your tile.
     override fun onTileRemoved() {
         super.onTileRemoved()
+        Keys.updateBoolean(this, Keys.KEY_TILE_ADDED, false)
     }
 }

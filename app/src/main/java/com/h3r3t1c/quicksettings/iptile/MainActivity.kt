@@ -9,8 +9,10 @@ import android.os.Build
 import android.os.Bundle
 import android.service.quicksettings.TileService
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,6 +42,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,6 +72,9 @@ import com.h3r3t1c.quicksettings.iptile.ui.theme.Blue700
 import com.h3r3t1c.quicksettings.iptile.ui.theme.IPTileTheme
 import com.h3r3t1c.quicksettings.iptile.util.AddressHelper
 import com.h3r3t1c.quicksettings.iptile.util.Keys
+import com.h3r3t1c.quicksettings.iptile.viewmodels.MainActivityViewModel
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import my.nanihadesuka.compose.LazyColumnScrollbar
 import java.net.NetworkInterface
 import java.util.Collections
@@ -79,52 +85,34 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val statusBarManager: StatusBarManager = getSystemService(StatusBarManager::class.java)
-            val resultSuccessExecutor = Executor {
-                runOnUiThread {
-                    Log.d("zzz", "Added?")
-                }
-            }
-            statusBarManager.requestAddTileService(
-                ComponentName(this, LocalIPTileService::class.java),
-                getString(R.string.app_name),
-                Icon.createWithResource(this, R.drawable.ic_lan_network),
-                resultSuccessExecutor
-            ){ resultCodeFailure ->
-                Log.d("zzz", resultCodeFailure.toString())
-            }
-        }*/
-
         setContent {
             IPTileTheme {
-                // A surface container using the 'background' color from the theme
+                val c = LocalContext.current
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainActivityUI()
+                    val viewModel : MainActivityViewModel by viewModels()
+                    LaunchedEffect(true){
+                        viewModel.initVars(c)
+                    }
+                    MainActivityUI(viewModel)
                 }
             }
         }
     }
 }
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
-fun MainActivityUI(){
+fun MainActivityUI(viewModel: MainActivityViewModel){
     val context = LocalContext.current;
     val mainPadding = dimensionResource(id = R.dimen.main_app_padding)
 
-
-    var selectedInterface by remember {
-        mutableStateOf(AddressHelper.interfaceNameToReadableName(
-            Keys.getSelectedInterface(context).toString())+" ("+Keys.getSelectedInterface(context).toString()+")"
-        )
-    }
     var showInterfacePickerDialog by remember {
         mutableStateOf(false)
     }
     var lazeColumnState = rememberLazyListState()
+
     LazyColumnScrollbar(
         lazeColumnState,
         hideDelayMillis = 1000,
@@ -137,9 +125,11 @@ fun MainActivityUI(){
             state = lazeColumnState
         ) {
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (viewModel.showAddTileButton()) {
                 item {
-                    ShowAddButton()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        ShowAddButtonTop(viewModel)
+                    }
                 }
             }
             item{
@@ -153,16 +143,12 @@ fun MainActivityUI(){
                 )
             }
 
-            item{SwitchOption(Keys.showDialogOnLockscreen(context), R.string.show_dialog_on_lockscreen, Keys.PREF_SHOW_DIALOG_LOCKSCREEN, Icons.Default.HideSource)}
-            item{SwitchOption(Keys.showDialogOnLockscreen(context), R.string.show_dialog_on_lockscreen, Keys.PREF_SHOW_DIALOG_LOCKSCREEN, Icons.Default.HideSource)}
-            item{SwitchOption(Keys.showDialogOnLockscreen(context), R.string.show_dialog_on_lockscreen, Keys.PREF_SHOW_DIALOG_LOCKSCREEN, Icons.Default.HideSource)}
-
             item{SwitchOption(Keys.hideIPOnLockscreen(context), R.string.hide_ip_when_locked, Keys.PREF_HIDE_IP_ON_LOCK, Icons.Default.HideSource, true)}
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
                 item{SwitchOption(Keys.showInterfaceName(context), R.string.show_intf_name, Keys.PREF_SHOW_INTERFACE_NAME, Icons.Default.ShortText)}
 
             item{
-                SelectOption(title = stringResource(R.string.selected_interface), subTitle = selectedInterface, icon = R.drawable.ic_interface)
+                SelectOption(title = stringResource(R.string.selected_interface), subTitle = viewModel.getSelectedInterface(), icon = R.drawable.ic_interface)
                 {
                     showInterfacePickerDialog = true
                 }
@@ -188,7 +174,7 @@ fun MainActivityUI(){
                 showInterfacePickerDialog = false
                 if(selected != ""){
                     Keys.updateString(context, Keys.PREF_INTERFACE, selected)
-                    selectedInterface = AddressHelper.interfaceNameToReadableName(selected)+" ($selected)"
+                    viewModel.updateSelectedInterface(AddressHelper.interfaceNameToReadableName(selected)+" ($selected)")
                 }
             }
         }
@@ -198,8 +184,9 @@ fun MainActivityUI(){
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
-fun ShowAddButton(){
+fun ShowAddButtonTop(viewModel: MainActivityViewModel){
     val context = LocalContext.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -212,15 +199,20 @@ fun ShowAddButton(){
                 onClick = {
                     val statusBarManager: StatusBarManager = context.getSystemService(StatusBarManager::class.java)
                     val resultSuccessExecutor = Executor {
+                        viewModel.updateShowAddTileButton(false)
 
+                        MainScope().launch(){
+                            Toast.makeText(context,
+                                R.string.tile_added, Toast.LENGTH_LONG).show()
+                        }
                     }
                     statusBarManager.requestAddTileService(
                         ComponentName(context, LocalIPTileService::class.java),
                         context.getString(R.string.app_name),
                         Icon.createWithResource(context, R.drawable.ic_lan_network),
                         resultSuccessExecutor
-                    ){ resultCodeFailure ->
-
+                    ){ _ ->
+                        viewModel.updateShowAddTileButton(false)
                     }
                 },
                 modifier = Modifier
@@ -228,7 +220,7 @@ fun ShowAddButton(){
                     .fillMaxWidth()
             ) {
                 Text(
-                    text = "Add Quick Settings Tile",
+                    text = stringResource(R.string.add_quick_settings_tile),
                     color = Color.White
                 )
             }
@@ -364,12 +356,5 @@ fun SwitchOption(b:Boolean, title:Int, pref:String, icon:ImageVector, hideSpace:
             ),
             modifier = Modifier
         )
-    }
-}
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    IPTileTheme {
-        MainActivityUI()
     }
 }

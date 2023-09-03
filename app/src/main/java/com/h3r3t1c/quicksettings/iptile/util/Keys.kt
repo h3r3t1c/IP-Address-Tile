@@ -11,6 +11,8 @@ object Keys {
     const val PREF_INTERFACE = "interface"
     const val PREF_SHOW_INTERFACE_NAME = "show_iface_name"
 
+    const val KEY_TILE_ADDED = "tile_added"
+
     private fun getPrefs(c: Context): SharedPreferences {
         return PreferenceManager.getDefaultSharedPreferences(c)
     }
@@ -19,6 +21,9 @@ object Keys {
     }
     fun updateBoolean(c:Context, key:String, b:Boolean){
         getPrefs(c).edit().putBoolean(key, b).commit()
+    }
+    fun isTileAdded(c:Context):Boolean{
+        return getPrefs(c).getBoolean(KEY_TILE_ADDED, false);
     }
     fun showDialogOnLockscreen(c:Context):Boolean{
         return getPrefs(c).getBoolean(PREF_SHOW_DIALOG_LOCKSCREEN, true)
